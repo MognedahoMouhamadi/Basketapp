@@ -97,7 +97,6 @@ export default function MatchViewerScreen({ route, navigation }: P) {
     } finally {
       setPending(false);
     }
-    }
   };
 
   return (
