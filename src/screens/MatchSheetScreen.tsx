@@ -1,6 +1,6 @@
 // src/screens/MatchSheetScreen.tsx
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, FlatList, Alert } from 'react-native';
+import { View, Text, Pressable, StyleSheet, FlatList, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../theme/colors';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -11,6 +11,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useMatchParticipants } from '../hooks/useMatchParticipants';
 import { startMatchRemote, pushEventRemote, endMatchRemote } from '../services/functions';
+import { startMatchLocal, pushEventLocal, endMatch as endMatchLocal } from '../services/matchService';
 import { scoreDeltaFor, ScoreEventType } from '../services/matchScoring';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase';
@@ -108,15 +109,36 @@ export default function MatchSheetScreen({ route, navigation }: P) {
   const sendScoreEvent = async (team: 'A'|'B', playerId: string, type: ScoreEventType) => {
     if (!matchId || !canReferee) return;
     try {
+      const points = scoreDeltaFor(type);
+      if (Platform.OS === 'web') {
+        await pushEventLocal({
+          matchId: String(matchId),
+          kind: type,
+          uid: playerId,
+          team,
+          points,
+        });
+        return;
+      }
       await pushEventRemote({
         matchId: String(matchId),
         kind: type,
         uid: playerId,
         team,
-        points: scoreDeltaFor(type),
+        points,
       });
     } catch (err: any) {
-      Alert.alert('Erreur', err?.message ?? 'Impossible d’enregistrer l’action.');
+      try {
+        await pushEventLocal({
+          matchId: String(matchId),
+          kind: type,
+          uid: playerId,
+          team,
+          points: scoreDeltaFor(type),
+        });
+        return;
+      } catch {}
+      Alert.alert('Erreur', err?.message ?? 'Impossible d?enregistrer l?action.');
     }
   };
 
@@ -134,17 +156,54 @@ export default function MatchSheetScreen({ route, navigation }: P) {
 
   const onStart = async () => {
     if (matchId && canReferee) {
-      try { await startMatchRemote(String(matchId)); }
-      catch (err: any) { Alert.alert('Erreur', err?.message ?? 'Impossible de démarrer le match.'); }
+      try {
+        await startMatchLocal(String(matchId));
+        if (Platform.OS !== 'web') {
+          try { await startMatchRemote(String(matchId)); } catch (e: any) { console.warn('startMatchRemote failed', e?.code ?? e?.message ?? e); }
+        }
+      } catch (err: any) {
+        console.warn('startMatchLocal failed', err?.code ?? err?.message ?? err);
+        Alert.alert('Erreur', err?.code ? `${err.code}` : (err?.message ?? 'Impossible de d?marrer le match.'));
+        return;
+      }
     }
     matchState.start();
   };
 
   const handleEnd = async () => {
     if (matchId && canReferee) {
+      const finalScore = { scoreA: scoreA ?? matchState.scoreA, scoreB: scoreB ?? matchState.scoreB };
       try {
-        await endMatchRemote(String(matchId));
-        Alert.alert('Match terminé', 'La partie est clôturée avec succès.');
+        // Always persist locally; Cloud Function is optional.
+        await endMatchLocal(String(matchId), finalScore);
+        if (Platform.OS !== 'web') {
+          try { await endMatchRemote(String(matchId)); } catch (e: any) { console.warn('endMatchRemote failed', e?.code ?? e?.message ?? e); }
+        }
+        Alert.alert('Match termin?', 'La partie est cl?tur?e avec succ?s.');
+        navigation.navigate('Home');
+      } catch (err: any) {
+        console.warn('endMatchLocal failed', err?.code ?? err?.message ?? err);
+        Alert.alert('Erreur', err?.code ? `${err.code}` : (err?.message ?? 'Impossible de terminer le match.'));
+      }
+      return;
+    }
+
+    navigation.navigate('MatchRecap', {
+      stats: matchState.stats,
+      name: nameOf(name),
+      place: nameOf(place),
+      format: nameOf(format),
+      playersA: playersAData.map((p) => p.uid),
+      playersB: playersBData.map((p) => p.uid),
+    });
+  };
+      try {
+        // Always persist locally; Cloud Function is optional.
+        await endMatchLocal(String(matchId), finalScore);
+        if (Platform.OS !== 'web') {
+          try { await endMatchRemote(String(matchId)); } catch {}
+        }
+        Alert.alert('Match termin?', 'La partie est cl?tur?e avec succ?s.');
         navigation.navigate('Home');
       } catch (err: any) {
         Alert.alert('Erreur', err?.message ?? 'Impossible de terminer le match.');

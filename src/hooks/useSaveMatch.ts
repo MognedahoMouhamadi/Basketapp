@@ -26,9 +26,10 @@ export async function saveMatchToFirestore(input: SaveMatchInput): Promise<strin
     place: place ?? null,
     format: format ?? null,
     ts,
-    status: 'closed' as const,
+    status: 'finished' as const,
     playersA,
     playersB,
+    participantUids: [...playersA, ...playersB],
     scoreA,
     scoreB,
   } as const;

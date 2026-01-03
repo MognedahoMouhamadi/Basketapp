@@ -1,5 +1,5 @@
 // UTF-8 version with join controls
-import { View, Text, StyleSheet, FlatList, Pressable, Button, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, Button, Alert, Platform } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
 import colors from '../theme/colors';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -13,6 +13,7 @@ import { db } from '../services/firebase';
 import { joinTeamRemote } from '../services/functions';
 import { joinTeamLocal } from '../services/matchService';
 import { useMatchParticipants } from '../hooks/useMatchParticipants';
+import { isFinishedStatus } from '../services/matchStatus';
 
 type P = NativeStackScreenProps<AppStackParamList, 'MatchViewer'>;
 
@@ -63,6 +64,7 @@ export default function MatchViewerScreen({ route, navigation }: P) {
   const isInA = useMemo(() => playersA.some((p: any) => p?.uid === uid), [playersA, uid]);
   const isInB = useMemo(() => playersB.some((p: any) => p?.uid === uid), [playersB, uid]);
   const isInAny = isInA || isInB;
+  const isFinished = useMemo(() => isFinishedStatus(match?.status), [match?.status]);
   const teamLabel = useMemo(() => {
     if (isInA) return 'A';
     if (isInB) return 'B';
@@ -77,11 +79,18 @@ export default function MatchViewerScreen({ route, navigation }: P) {
     }
     try {
       setPending(true);
+      if (Platform.OS === 'web') {
+        await joinTeamLocal(String(matchId), team, {
+          uid,
+          displayName: profile?.displayName ?? uid,
+        });
+        return;
+      }
       await joinTeamRemote(String(matchId), team);
     } catch (e: any) {
       const code = String(e?.code ?? '');
       const msg = String(e?.message ?? '');
-      if ((code === 'not-found' || msg.includes('not-found')) && uid) {
+      if (uid) {
         try {
           await joinTeamLocal(String(matchId), team, {
             uid,
@@ -92,6 +101,10 @@ export default function MatchViewerScreen({ route, navigation }: P) {
           Alert.alert('Erreur', err?.message ?? 'Impossible de mettre ? jour votre ?quipe.');
           return;
         }
+      }
+      if (code === 'not-found' || msg.includes('not-found')) {
+        Alert.alert('Erreur', 'Fonction joinTeam introuvable.');
+        return;
       }
       Alert.alert('Erreur', msg || 'Impossible de mettre ? jour votre ?quipe.');
     } finally {
@@ -126,7 +139,7 @@ export default function MatchViewerScreen({ route, navigation }: P) {
       </View>
 
       {/* Join controls */}
-      {!!match && !!uid && match.status !== 'closed' && match.refereeId !== uid && (
+      {!!match && !!uid && !isFinished && match.refereeId !== uid && (
         <View style={{ gap: 8, marginBottom: 8 }}>
           {teamLabel && (
             <Text style={{ color: colors.text, fontWeight: '600' }}>

@@ -132,7 +132,7 @@ export default function PlayerStatsScreen() {
           </View>
         </View>
 
-        <Pressable style={s.cta}>
+        <Pressable style={s.cta} onPress={() => navigation.navigate('MatchHistory', { mode: 'user' })}>
           <Text style={s.ctaTxt}>Voir l’historique des matchs</Text>
         </Pressable>
       </ScrollView>

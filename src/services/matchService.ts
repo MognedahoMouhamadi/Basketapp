@@ -8,10 +8,11 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import type { ScoreEventType } from './matchScoring';
 
 // ---- Types -----------------------------------------------------------------
 export type MatchCategory = 'public' | 'ranked' | 'tournament';
-export type MatchStatus = 'open' | 'running' | 'closed';
+export type MatchStatus = 'open' | 'running' | 'closed' | 'finished';
 export type MatchVisibility = 'public' | 'private' | 'tournament';
 
 export type MatchPlayerStats = {
@@ -56,10 +57,12 @@ export async function createMatch(input: CreateMatchInput) {
     startedAt: null as number | null,
     endedAt: null as number | null,
     creatorId: input.creatorId,
+    createdBy: input.creatorId,
     refereeId: input.creatorId,
     tournamentId: input.category === 'tournament' ? (input.tournamentId ?? null) : null,
     participantsCountA: 0,
     participantsCountB: 0,
+    participantUids: [] as string[],
     allowJoinInRunning: input.category === 'public',
     name: input.name ?? '',
     place: input.place ?? '',
@@ -81,13 +84,17 @@ export async function startMatch(matchId: string) {
   } as any);
 }
 
+export async function startMatchLocal(matchId: string) {
+  return startMatch(matchId);
+}
+
 export async function endMatch(
   matchId: string,
   finalScore?: { scoreA?: number; scoreB?: number } | null
 ) {
   const mref = doc(db, 'matches', matchId);
   const patch: Record<string, unknown> = {
-    status: 'closed',
+    status: 'finished',
     endedAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -96,6 +103,58 @@ export async function endMatch(
     if (typeof finalScore.scoreB === 'number') patch.scoreB = finalScore.scoreB;
   }
   await updateDoc(mref, patch);
+}
+
+export async function pushEventLocal(params: {
+  matchId: string;
+  kind: ScoreEventType;
+  uid: string;
+  team: 'A' | 'B';
+  points?: number;
+}) {
+  const { matchId, kind, uid, team, points } = params;
+  const mref = doc(db, 'matches', matchId);
+  const pref = doc(db, 'matches', matchId, 'participants', uid);
+  await runTransaction(db, async (tx) => {
+    const matchSnap = await tx.get(mref);
+    if (!matchSnap.exists()) throw new Error('Match introuvable');
+    const m = matchSnap.data() as any;
+    const scoreA = Number(m.scoreA ?? 0);
+    const scoreB = Number(m.scoreB ?? 0);
+    const existingUids = Array.isArray(m.participantUids) ? [...m.participantUids] : [];
+
+    let nextScoreA = scoreA;
+    let nextScoreB = scoreB;
+    const delta = Number(points ?? 0);
+    if ((kind === 'PLUS2' || kind === 'PLUS3') && delta > 0) {
+      if (team === 'A') nextScoreA += delta;
+      if (team === 'B') nextScoreB += delta;
+    }
+
+    const prefSnap = await tx.get(pref);
+    const prev = prefSnap.exists() ? (prefSnap.data() as any) : {};
+    const stats = { ...(prev.stats ?? {}) } as any;
+    if (kind === 'PLUS2' || kind === 'PLUS3') {
+      stats.pts = Math.max(0, Number(stats.pts ?? stats.points ?? 0) + delta);
+    } else if (kind === 'FOUL') {
+      stats.fouls = Math.max(0, Number(stats.fouls ?? 0) + 1);
+    } else if (kind === 'BLOCK') {
+      stats.blocks = Math.max(0, Number(stats.blocks ?? 0) + 1);
+    }
+
+    tx.set(
+      pref,
+      { uid, team, role: prev.role ?? 'player', stats, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+
+    tx.update(mref, {
+      scoreA: nextScoreA,
+      scoreB: nextScoreB,
+      participantUids: existingUids.includes(uid) ? existingUids : [...existingUids, uid],
+      updatedAt: serverTimestamp(),
+    });
+  });
 }
 
 // ---- Client-side join (fallback when Cloud Functions are unavailable) ------
@@ -117,6 +176,8 @@ export async function joinTeamLocal(
     const prevTeam = prevSnap.exists() ? (prevSnap.data() as any)?.team : null;
     let countA = Number(data.participantsCountA ?? 0);
     let countB = Number(data.participantsCountB ?? 0);
+    const existingUids = Array.isArray(data.participantUids) ? [...data.participantUids] : [];
+    const uidStr = String(user.uid);
 
     const dec = (t: 'A' | 'B') => {
       if (t === 'A') countA = Math.max(0, countA - 1);
@@ -130,12 +191,15 @@ export async function joinTeamLocal(
     if (prevTeam && prevTeam !== team) dec(prevTeam);
     if (team && prevTeam !== team) inc(team);
 
+    let participantUids = existingUids.filter((id) => id !== uidStr);
+    if (team) participantUids = [...participantUids, uidStr];
+
     if (team) {
       tx.set(
         pref,
         {
-          uid: String(user.uid),
-          displayName: String(user.displayName ?? user.uid),
+          uid: uidStr,
+          displayName: String(user.displayName ?? uidStr),
           team,
           role: 'player',
           joinedAt: prevSnap.exists()
@@ -151,6 +215,7 @@ export async function joinTeamLocal(
     tx.update(mref, {
       participantsCountA: countA,
       participantsCountB: countB,
+      participantUids,
       updatedAt: serverTimestamp(),
     });
   });

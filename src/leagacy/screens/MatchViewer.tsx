@@ -11,6 +11,7 @@ import { hasActiveMatch } from '../hooks/useActiveMatchGuard';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { joinTeamRemote } from '../services/functions';
+import { isFinishedStatus } from '../services/matchStatus';
 
 type P = NativeStackScreenProps<AppStackParamList, 'MatchViewer'>;
 
@@ -71,6 +72,7 @@ export default function MatchViewerScreen({ route, navigation }: P) {
   const isInA = useMemo(() => playersA.some((p: any) => p?.uid === uid), [playersA, uid]);
   const isInB = useMemo(() => playersB.some((p: any) => p?.uid === uid), [playersB, uid]);
   const isInAny = isInA || isInB;
+  const isFinished = useMemo(() => isFinishedStatus(match?.status), [match?.status]);
   const teamLabel = useMemo(() => {
     if (isInA) return 'A';
     if (isInB) return 'B';
@@ -130,7 +132,7 @@ export default function MatchViewerScreen({ route, navigation }: P) {
       </View>
 
       {/* === Nouveau : Contrôles rejoindre équipe (invisible pour l’arbitre) === */}
-      {!!match && !!uid && match.status !== 'closed' && match.refereeId !== uid && (
+      {!!match && !!uid && !isFinished && match.refereeId !== uid && (
         <View style={{ gap: 8, marginBottom: 8 }}>
           {teamLabel && (
             <Text style={{ color: colors.text, fontWeight: '600' }}>

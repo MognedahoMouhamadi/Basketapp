@@ -21,10 +21,10 @@ export async function endMatch(matchId: string, uid?: string | null) {
       throw new Error('Seul l’arbitre ou le créateur peut terminer ce match');
     }
 
-    if (data.status === 'closed') return;
+    if (data.status === 'finished' || data.status === 'closed') return;
 
     tx.update(ref, {
-      status: 'closed',
+      status: 'finished',
       endedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });

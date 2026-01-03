@@ -43,6 +43,10 @@ export type AppStackParamList = {
     playersB?: MatchPlayer[] | string[];
   } | undefined;
 
+  MatchHistory: {
+    mode?: 'global' | 'user';
+  } | undefined;
+
   PlayerStats: undefined;
 };
 
@@ -72,7 +76,7 @@ export function sanitizeMatch(m: any): MatchLite {
 }
 
 // Full Firestore match document
-export type MatchStatus = 'open' | 'running' | 'closed';
+export type MatchStatus = 'open' | 'running' | 'closed' | 'finished';
 
 export type MatchDoc = {
   name: string;

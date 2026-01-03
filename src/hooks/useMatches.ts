@@ -152,7 +152,7 @@ export type MatchItem = {
   name: string;
   place: string;
   format: string;
-  status: 'open'|'running'|'closed'|string;
+  status: 'open'|'running'|'closed'|'finished'|string;
   playersA?: MatchPlayer[];
   playersB?: MatchPlayer[];
   participantsCountA?: number;
