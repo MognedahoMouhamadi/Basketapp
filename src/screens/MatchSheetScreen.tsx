@@ -9,6 +9,7 @@ import PlayerRow from '../components/PlayerRow';
 import { useMatch } from '../hooks/useMatches';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserProfile } from '../hooks/useUserProfile';
+import { useMatchParticipants } from '../hooks/useMatchParticipants';
 import { startMatchRemote, pushEventRemote, endMatchRemote } from '../services/functions';
 import { scoreDeltaFor, ScoreEventType } from '../services/matchScoring';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -54,13 +55,14 @@ export default function MatchSheetScreen({ route, navigation }: P) {
   } = (route.params ?? {}) as any;
 
   const [match, setMatch] = useState<any | null>(null);
+  const { playersA: participantsA, playersB: participantsB } = useMatchParticipants(matchId);
   const playersAList = useMemo(
-    () => (Array.isArray(incomingA) ? incomingA : []),
-    [incomingA]
+    () => (participantsA.length ? participantsA : (Array.isArray(incomingA) ? incomingA : [])),
+    [participantsA, incomingA]
   ) as IncomingPlayer[];
   const playersBList = useMemo(
-    () => (Array.isArray(incomingB) ? incomingB : []),
-    [incomingB]
+    () => (participantsB.length ? participantsB : (Array.isArray(incomingB) ? incomingB : [])),
+    [participantsB, incomingB]
   ) as IncomingPlayer[];
 
   const playersAData = useMemo(

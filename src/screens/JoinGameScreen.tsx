@@ -27,8 +27,6 @@ export default function JoinGameScreen({ navigation }: P) {
       name: nameOf(item.name),
       place: item.place,
       format: item.format,
-      playersA: item.playersA ?? [],
-      playersB: item.playersB ?? [],
     };
 
     if (asReferee) navigation.navigate('MatchSheet', params);

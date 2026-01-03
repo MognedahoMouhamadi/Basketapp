@@ -12,6 +12,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { joinTeamRemote } from '../services/functions';
 import { joinTeamLocal } from '../services/matchService';
+import { useMatchParticipants } from '../hooks/useMatchParticipants';
 
 type P = NativeStackScreenProps<AppStackParamList, 'MatchViewer'>;
 
@@ -23,6 +24,7 @@ export default function MatchViewerScreen({ route, navigation }: P) {
   const [match, setMatch] = useState<any | null>(null);
   const [pending, setPending] = useState(false);
   const { uid, profile, loading: loadingProfile } = useUserProfile();
+  const { playersA: participantsA, playersB: participantsB } = useMatchParticipants(matchId);
 
   const nameOf = (p: any) => {
     if (!p) return '—';
@@ -45,15 +47,17 @@ export default function MatchViewerScreen({ route, navigation }: P) {
   }, [route.params?.matchId]);
 
   const playersA = useMemo<any[]>(() => {
+    if (participantsA.length) return participantsA;
     if (Array.isArray(match?.playersA)) return match?.playersA ?? [];
     if (Array.isArray(match?.players?.playersA)) return match?.players?.playersA ?? [];
     return [];
-  }, [match?.playersA, match?.players]);
+  }, [participantsA, match?.playersA, match?.players]);
   const playersB = useMemo<any[]>(() => {
+    if (participantsB.length) return participantsB;
     if (Array.isArray(match?.playersB)) return match?.playersB ?? [];
     if (Array.isArray(match?.players?.playersB)) return match?.players?.playersB ?? [];
     return [];
-  }, [match?.playersB, match?.players]);
+  }, [participantsB, match?.playersB, match?.players]);
 
   const isReferee = useMemo(() => !!match && uid === match?.refereeId, [match, uid]);
   const isInA = useMemo(() => playersA.some((p: any) => p?.uid === uid), [playersA, uid]);

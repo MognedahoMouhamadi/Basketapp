@@ -155,6 +155,8 @@ export type MatchItem = {
   status: 'open'|'running'|'closed'|string;
   playersA?: MatchPlayer[];
   playersB?: MatchPlayer[];
+  participantsCountA?: number;
+  participantsCountB?: number;
 };
 
 export function useOpenMatches() {

@@ -52,8 +52,10 @@ export type MatchLite = {
   name: string;
   place: string;
   format: string;
-  playersA: MatchPlayer[];
-  playersB: MatchPlayer[];
+  playersA?: MatchPlayer[];
+  playersB?: MatchPlayer[];
+  participantsCountA?: number;
+  participantsCountB?: number;
 };
 
 export function sanitizeMatch(m: any): MatchLite {
@@ -64,6 +66,8 @@ export function sanitizeMatch(m: any): MatchLite {
     format: String(m.format ?? ''),
     playersA: Array.isArray(m.playersA) ? (m.playersA as MatchPlayer[]) : [],
     playersB: Array.isArray(m.playersB) ? (m.playersB as MatchPlayer[]) : [],
+    participantsCountA: typeof m.participantsCountA === 'number' ? m.participantsCountA : undefined,
+    participantsCountB: typeof m.participantsCountB === 'number' ? m.participantsCountB : undefined,
   };
 }
 
@@ -74,8 +78,10 @@ export type MatchDoc = {
   name: string;
   place: string;
   format: '1v1' | '2v2' | '3v3' | '4v4' | '5v5' | string;
-  playersA: MatchPlayer[];
-  playersB: MatchPlayer[];
+  playersA?: MatchPlayer[];
+  playersB?: MatchPlayer[];
+  participantsCountA?: number;
+  participantsCountB?: number;
   referees: string[];
   status: MatchStatus;
   comment?: string | null;

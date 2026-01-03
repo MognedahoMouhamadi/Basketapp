@@ -58,8 +58,8 @@ export async function createMatch(input: CreateMatchInput) {
     creatorId: input.creatorId,
     refereeId: input.creatorId,
     tournamentId: input.category === 'tournament' ? (input.tournamentId ?? null) : null,
-    playersA: [] as MatchPlayer[],
-    playersB: [] as MatchPlayer[],
+    participantsCountA: 0,
+    participantsCountB: 0,
     allowJoinInRunning: input.category === 'public',
     name: input.name ?? '',
     place: input.place ?? '',
@@ -101,12 +101,6 @@ export async function endMatch(
 // ---- Client-side join (fallback when Cloud Functions are unavailable) ------
 type JoinUser = { uid: string; displayName?: string | null };
 
-const playerIdOf = (p: any) => {
-  if (!p) return '';
-  if (typeof p === 'string') return p;
-  return String(p.uid ?? p.displayName ?? '');
-};
-
 export async function joinTeamLocal(
   matchId: string,
   team: 'A' | 'B' | null,
@@ -114,26 +108,49 @@ export async function joinTeamLocal(
 ) {
   if (!user?.uid) throw new Error('Not authenticated');
   const mref = doc(db, 'matches', matchId);
+  const pref = doc(db, 'matches', matchId, 'participants', user.uid);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(mref);
     if (!snap.exists()) throw new Error('Match introuvable');
     const data = snap.data() as any;
-    let playersA: any[] = Array.isArray(data.playersA) ? [...data.playersA] : [];
-    let playersB: any[] = Array.isArray(data.playersB) ? [...data.playersB] : [];
-    const uid = String(user.uid);
-    playersA = playersA.filter((p) => playerIdOf(p) !== uid);
-    playersB = playersB.filter((p) => playerIdOf(p) !== uid);
-    const player = {
-      uid,
-      displayName: String(user.displayName ?? uid),
-      joinedAt: Date.now(),
-      stats: { pts: 0, fouls: 0, blocks: 0 },
+    const prevSnap = await tx.get(pref);
+    const prevTeam = prevSnap.exists() ? (prevSnap.data() as any)?.team : null;
+    let countA = Number(data.participantsCountA ?? 0);
+    let countB = Number(data.participantsCountB ?? 0);
+
+    const dec = (t: 'A' | 'B') => {
+      if (t === 'A') countA = Math.max(0, countA - 1);
+      if (t === 'B') countB = Math.max(0, countB - 1);
     };
-    if (team === 'A') playersA.push(player);
-    if (team === 'B') playersB.push(player);
+    const inc = (t: 'A' | 'B') => {
+      if (t === 'A') countA += 1;
+      if (t === 'B') countB += 1;
+    };
+
+    if (prevTeam && prevTeam !== team) dec(prevTeam);
+    if (team && prevTeam !== team) inc(team);
+
+    if (team) {
+      tx.set(
+        pref,
+        {
+          uid: String(user.uid),
+          displayName: String(user.displayName ?? user.uid),
+          team,
+          role: 'player',
+          joinedAt: prevSnap.exists()
+            ? (prevSnap.data() as any)?.joinedAt ?? serverTimestamp()
+            : serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } else if (prevSnap.exists()) {
+      tx.delete(pref);
+    }
+
     tx.update(mref, {
-      playersA,
-      playersB,
+      participantsCountA: countA,
+      participantsCountB: countB,
       updatedAt: serverTimestamp(),
     });
   });
