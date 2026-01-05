@@ -30,6 +30,27 @@ export default function MatchHistoryScreen({ route, navigation }: P) {
     return d.toLocaleDateString('fr-FR');
   };
 
+  const categoryLabel = (category?: string) => (category === 'ranked' ? 'Classé' : 'Public');
+
+  const winnerLabel = (winnerTeam?: string) => {
+    const raw = String(winnerTeam ?? '').toUpperCase();
+    if (raw === 'A') return 'Gagnant: A';
+    if (raw === 'B') return 'Gagnant: B';
+    if (raw === 'DRAW' || raw === 'TIE' || raw === 'EGALITE') return 'Gagnant: Egalite';
+    return null;
+  };
+
+  const userResultLabel = (item: any) => {
+    if (!uid || !item?.winnerTeam) return null;
+    const inA = Array.isArray(item.playersA) && item.playersA.includes(uid);
+    const inB = Array.isArray(item.playersB) && item.playersB.includes(uid);
+    if (!inA && !inB) return null;
+    const userTeam = inA ? 'A' : 'B';
+    const raw = String(item.winnerTeam ?? '').toUpperCase();
+    if (raw !== 'A' && raw !== 'B') return 'Egalite';
+    return raw === userTeam ? 'Vous avez gagne' : 'Vous avez perdu';
+  };
+
   return (
     <SafeAreaView style={s.container} edges={['top','bottom']}>
       <View style={s.topbar}>
@@ -56,19 +77,29 @@ export default function MatchHistoryScreen({ route, navigation }: P) {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16, gap: 12 }}
           renderItem={({ item }) => (
-            <View style={s.card}>
+            <Pressable
+              style={s.card}
+              onPress={() => navigation.navigate('MatchDetails', { matchId: item.id })}
+            >
               <View style={s.cardTop}>
                 <Text style={s.cardTitle}>{item.name ?? 'Match'}</Text>
                 <Text style={s.cardStatus}>{String(item.status ?? 'finished')}</Text>
               </View>
               <Text style={s.cardSub}>{item.place ?? '-'}</Text>
+              <View style={s.badgesRow}>
+                <View style={s.badge}><Text style={s.badgeTxt}>{categoryLabel(item.category)}</Text></View>
+                {winnerLabel(item.winnerTeam) ? (
+                  <View style={s.badge}><Text style={s.badgeTxt}>{winnerLabel(item.winnerTeam)}</Text></View>
+                ) : null}
+              </View>
+              {userResultLabel(item) ? <Text style={s.userResult}>{userResultLabel(item)}</Text> : null}
               <View style={s.metaRow}>
                 <Text style={s.cardMeta}>
                   {item.scoreA ?? 0} : {item.scoreB ?? 0}
                 </Text>
                 <Text style={s.cardMeta}>{formatDate(item.endedAt ?? item.updatedAt)}</Text>
               </View>
-            </View>
+            </Pressable>
           )}
         />
       )}
@@ -90,6 +121,10 @@ const s = StyleSheet.create({
   cardTitle: { color: colors.text, fontWeight: '700' },
   cardStatus: { color: colors.textDim, fontSize: 12 },
   cardSub: { color: colors.textDim, marginTop: 6 },
+  badgesRow: { flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, borderWidth: 1, borderColor: colors.border },
+  badgeTxt: { color: colors.text, fontWeight: '700', fontSize: 12 },
+  userResult: { color: colors.text, fontWeight: '700', marginTop: 6 },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
   cardMeta: { color: colors.text, fontWeight: '700' },
 });

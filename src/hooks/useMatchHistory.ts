@@ -9,6 +9,8 @@ export type MatchHistoryItem = {
   name?: string;
   place?: string;
   format?: string;
+  category?: string;
+  winnerTeam?: string;
   status?: string;
   scoreA?: number;
   scoreB?: number;
@@ -17,6 +19,8 @@ export type MatchHistoryItem = {
   startedAt?: any;
   endedAt?: any;
   updatedAt?: any;
+  playersA?: string[];
+  playersB?: string[];
   participantUids?: string[];
 };
 
@@ -43,7 +47,11 @@ export function useMatchHistory() {
         );
         const snap = await getDocs(q);
         const items = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as MatchHistoryItem[];
-        setData(items.map((m) => ({ ...m, status: normalizeMatchStatus(m.status) })));
+        setData(
+          items
+            .map((m) => ({ ...m, status: normalizeMatchStatus(m.status) }))
+            .sort(sortByEnd)
+        );
       } catch (err: any) {
         if (err?.code === 'failed-precondition') {
           try {
@@ -92,7 +100,11 @@ export function useUserMatchHistory(uid?: string | null) {
         );
         const snap = await getDocs(q);
         const items = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as MatchHistoryItem[];
-        setData(items.map((m) => ({ ...m, status: normalizeMatchStatus(m.status) })));
+        setData(
+          items
+            .map((m) => ({ ...m, status: normalizeMatchStatus(m.status) }))
+            .sort(sortByEnd)
+        );
       } catch (err: any) {
         if (err?.code === 'failed-precondition') {
           try {

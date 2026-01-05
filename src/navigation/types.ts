@@ -43,6 +43,10 @@ export type AppStackParamList = {
     playersB?: MatchPlayer[] | string[];
   } | undefined;
 
+  MatchDetails: {
+    matchId: string;
+  };
+
   MatchHistory: {
     mode?: 'global' | 'user';
   } | undefined;

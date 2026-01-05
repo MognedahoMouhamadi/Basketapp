@@ -12,6 +12,7 @@ import MatchViewerScreen from '../screens/MatchViewerScreenUTF8';
 import MatchRecapScreen from '../screens/MatchRecapScreen';
 import PlayerStatsScreen from '../screens/PlayerStatsScreen';
 import MatchHistoryScreen from '../screens/MatchHistoryScreen';
+import MatchDetailsScreen from '../screens/MatchDetailsScreen';
 
 import AuthLandingScreen from '../screens/AuthLandingScreen';
 import EmailAuthScreen from '../screens/EmailAuthScreen';
@@ -28,6 +29,7 @@ function AppNavigator() {
       <AppStack.Screen name="MatchSheet" component={MatchSheetScreen} />
       <AppStack.Screen name="MatchViewer" component={MatchViewerScreen} />
       <AppStack.Screen name="MatchRecap" component={MatchRecapScreen} />
+      <AppStack.Screen name="MatchDetails" component={MatchDetailsScreen} />
       <AppStack.Screen name="PlayerStats" component={PlayerStatsScreen} />
       <AppStack.Screen name="MatchHistory" component={MatchHistoryScreen} />
     </AppStack.Navigator>
