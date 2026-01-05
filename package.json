@@ -6,7 +6,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "backfill:elo": "ts-node scripts/backfillElo.ts"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -33,6 +34,9 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "@types/node": "^22.10.2",
+    "firebase-admin": "^12.6.0",
+    "ts-node": "^10.9.2",
     "typescript": "~5.9.2"
   },
   "private": true
