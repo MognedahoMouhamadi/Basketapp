@@ -9,6 +9,7 @@ import {
   User,
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { DEFAULT_ELO, DEFAULT_STATS } from '../services/statsElo.service';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(auth.currentUser);
@@ -40,6 +41,8 @@ export function useAuth() {
         displayName: pseudo || cred.user.displayName || email.split('@')[0],
         role: isReferee ? 'referee' : 'player',
         isActive: true,
+        elo: DEFAULT_ELO,
+        stats: DEFAULT_STATS,
         createdAt: serverTimestamp(),
       },
       { merge: true }

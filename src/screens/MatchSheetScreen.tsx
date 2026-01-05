@@ -15,6 +15,7 @@ import { startMatchLocal, pushEventLocal, endMatch as endMatchLocal } from '../s
 import { scoreDeltaFor, ScoreEventType } from '../services/matchScoring';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import { finalizeMatchAndCommit } from '../services/statsElo.service';
 
 type P = NativeStackScreenProps<AppStackParamList,'MatchSheet'>;
 
@@ -186,6 +187,7 @@ export default function MatchSheetScreen({ route, navigation }: P) {
         if (Platform.OS !== 'web') {
           try { await endMatchRemote(String(matchId)); } catch (e: any) { console.warn('endMatchRemote failed', e?.code ?? e?.message ?? e); }
         }
+        await finalizeMatchAndCommit(String(matchId));
         Alert.alert('Match termin?', 'La partie est cl?tur?e avec succ?s.');
         navigation.navigate('Home');
       } catch (err: any) {
@@ -348,4 +350,3 @@ const s = StyleSheet.create({
   },
   btnFoot:{ flex:1, alignItems:'center', justifyContent:'center', paddingVertical:12, borderRadius:12 },
 });
-

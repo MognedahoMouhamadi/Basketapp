@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { onSnapshot, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../services/firebase';
+import { ensureUserProfile } from '../services/statsElo.service';
 
 export type UserRole = 'player' | 'referee' | 'admin';
 
@@ -35,6 +36,7 @@ export function useUserProfile() {
       setLoading(false);
       return;
     }
+    ensureUserProfile(uid).catch((e) => setError(e as Error));
     setLoading(true);
     const ref = doc(db, 'users', uid);
     const unsub = onSnapshot(
