@@ -204,29 +204,6 @@ export default function MatchSheetScreen({ route, navigation }: P) {
       playersB: playersBData.map((p) => p.uid),
     });
   };
-      try {
-        // Always persist locally; Cloud Function is optional.
-        await endMatchLocal(String(matchId), finalScore);
-        if (Platform.OS !== 'web') {
-          try { await endMatchRemote(String(matchId)); } catch {}
-        }
-        Alert.alert('Match termin?', 'La partie est cl?tur?e avec succ?s.');
-        navigation.navigate('Home');
-      } catch (err: any) {
-        Alert.alert('Erreur', err?.message ?? 'Impossible de terminer le match.');
-      }
-      return;
-    }
-
-    navigation.navigate('MatchRecap', {
-      stats: matchState.stats,
-      name: nameOf(name),
-      place: nameOf(place),
-      format: isKnownFormat(format) ? format : undefined,
-      playersA: playersAData.map((p) => p.uid),
-      playersB: playersBData.map((p) => p.uid),
-    });
-  };
 
   const scoreA = match?.scoreA ?? matchState.scoreA;
   const scoreB = match?.scoreB ?? matchState.scoreB;
