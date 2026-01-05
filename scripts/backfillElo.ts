@@ -5,13 +5,13 @@ type TeamKey = 'A' | 'B';
 type WinnerTeam = 'A' | 'B' | 'draw';
 
 const DEFAULT_ELO = 1000;
-const K_FACTOR = 24;
+const DEFAULT_K = 24;
 
 type Flags = {
   force: boolean;
   updateUsers: boolean;
-  seedFromUsers: boolean;
   limit?: number;
+  kFactor: number;
 };
 
 const parseFlags = (): Flags => {
@@ -25,8 +25,8 @@ const parseFlags = (): Flags => {
   return {
     force: args.has('--force'),
     updateUsers: args.has('--update-users'),
-    seedFromUsers: args.has('--seed-users'),
     limit: flagValue('--limit') ? Number(flagValue('--limit')) : undefined,
+    kFactor: flagValue('--k') ? Number(flagValue('--k')) : DEFAULT_K,
   };
 };
 
@@ -53,23 +53,6 @@ const initAdmin = () => {
   admin.initializeApp({
     credential: admin.credential.applicationDefault(),
   });
-};
-
-const loadSeedElos = async (db: admin.firestore.Firestore, uids: string[]) => {
-  const eloByUid = new Map<string, number>();
-  if (!uids.length) return eloByUid;
-  const chunkSize = 500;
-  for (let i = 0; i < uids.length; i += chunkSize) {
-    const chunk = uids.slice(i, i + chunkSize);
-    const refs = chunk.map((uid) => db.doc(`users/${uid}`));
-    const snaps = await db.getAll(...refs);
-    for (const snap of snaps) {
-      const uid = snap.id;
-      const elo = asNumber(snap.data()?.elo, DEFAULT_ELO);
-      eloByUid.set(uid, elo);
-    }
-  }
-  return eloByUid;
 };
 
 const getMatches = async (
@@ -132,9 +115,9 @@ const ensureMap = (map: Map<string, number>, uid: string) => {
   return map.get(uid) ?? DEFAULT_ELO;
 };
 
-const computeDelta = (avgA: number, avgB: number, scoreA: number) => {
+const computeDelta = (avgA: number, avgB: number, scoreA: number, kFactor: number) => {
   const expectedA = 1 / (1 + Math.pow(10, (avgB - avgA) / 400));
-  return Math.round(K_FACTOR * (scoreA - expectedA));
+  return Math.round(kFactor * (scoreA - expectedA));
 };
 
 const main = async () => {
@@ -144,21 +127,11 @@ const main = async () => {
 
   const matches = await getMatches(db, flags.limit);
   console.log(`Found ${matches.length} ranked matches`);
-
-  const allUids = new Set<string>();
-  if (flags.seedFromUsers) {
-    for (const docSnap of matches) {
-      const { all } = await readParticipants(db, docSnap.id);
-      all.forEach((uid) => allUids.add(uid));
-    }
-  }
-
-  const eloByUid = flags.seedFromUsers
-    ? await loadSeedElos(db, Array.from(allUids))
-    : new Map<string, number>();
+  const eloByUid = new Map<string, number>();
 
   let processed = 0;
   let skipped = 0;
+  const skipReasons: Record<string, number> = {};
 
   for (const docSnap of matches) {
     const matchId = docSnap.id;
@@ -166,12 +139,14 @@ const main = async () => {
 
     if (data?.eloCommitted && !flags.force) {
       skipped += 1;
+      skipReasons.eloCommitted = (skipReasons.eloCommitted ?? 0) + 1;
       continue;
     }
 
     if (!data?.endedAt) {
       console.warn(`Skip ${matchId}: missing endedAt`);
       skipped += 1;
+      skipReasons.missingEndedAt = (skipReasons.missingEndedAt ?? 0) + 1;
       continue;
     }
 
@@ -179,6 +154,7 @@ const main = async () => {
     if (!winner) {
       console.warn(`Skip ${matchId}: missing score or winner`);
       skipped += 1;
+      skipReasons.missingScore = (skipReasons.missingScore ?? 0) + 1;
       continue;
     }
 
@@ -186,6 +162,7 @@ const main = async () => {
     if (!teamA.length || !teamB.length) {
       console.warn(`Skip ${matchId}: missing team participants`);
       skipped += 1;
+      skipReasons.missingParticipants = (skipReasons.missingParticipants ?? 0) + 1;
       continue;
     }
 
@@ -194,7 +171,7 @@ const main = async () => {
     const avgB =
       teamB.reduce((sum, uid) => sum + ensureMap(eloByUid, uid), 0) / teamB.length;
     const scoreA = winner === 'A' ? 1 : winner === 'B' ? 0 : 0.5;
-    const deltaA = computeDelta(avgA, avgB, scoreA);
+    const deltaA = computeDelta(avgA, avgB, scoreA, flags.kFactor);
     const deltaB = -deltaA;
 
     const batch = db.batch();
@@ -212,7 +189,16 @@ const main = async () => {
       const ref = db.doc(`matches/${matchId}/participants/${uid}`);
       batch.set(ref, { elo: { before, delta: deltaB, after } }, { merge: true });
     }
-    batch.set(db.doc(`matches/${matchId}`), { eloCommitted: true }, { merge: true });
+    const matchPatch: Record<string, unknown> = {
+      eloCommitted: true,
+      eloSummary: {
+        teamAEloAvgBefore: Math.round(avgA),
+        teamBEloAvgBefore: Math.round(avgB),
+        delta: deltaA,
+      },
+    };
+    if (!data?.winnerTeam || flags.force) matchPatch.winnerTeam = winner;
+    batch.set(db.doc(`matches/${matchId}`), matchPatch, { merge: true });
     await batch.commit();
     processed += 1;
     console.log(`Processed ${matchId} (deltaA ${deltaA}, deltaB ${deltaB})`);
@@ -233,6 +219,9 @@ const main = async () => {
   }
 
   console.log(`Done. processed=${processed} skipped=${skipped}`);
+  if (Object.keys(skipReasons).length) {
+    console.log('Skip reasons:', skipReasons);
+  }
 };
 
 main().catch((err) => {
