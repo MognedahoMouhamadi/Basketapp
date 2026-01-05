@@ -45,6 +45,13 @@ const normalizePlayer = (value: IncomingPlayer, fallback: string): NormalizedPla
   return { uid: safe, displayName: safe, joinedAt: Date.now() };
 };
 
+const isKnownFormat = (value: unknown): value is AppStackParamList['MatchRecap']['format'] => {
+  return (
+    typeof value === 'string' &&
+    ['1v1', '2v2', '3v3', '4v4', '5v5'].includes(value)
+  );
+};
+
 export default function MatchSheetScreen({ route, navigation }: P) {
   const {
     name='Match',
@@ -192,7 +199,7 @@ export default function MatchSheetScreen({ route, navigation }: P) {
       stats: matchState.stats,
       name: nameOf(name),
       place: nameOf(place),
-      format: nameOf(format),
+      format: isKnownFormat(format) ? format : undefined,
       playersA: playersAData.map((p) => p.uid),
       playersB: playersBData.map((p) => p.uid),
     });
@@ -215,7 +222,7 @@ export default function MatchSheetScreen({ route, navigation }: P) {
       stats: matchState.stats,
       name: nameOf(name),
       place: nameOf(place),
-      format: nameOf(format),
+      format: isKnownFormat(format) ? format : undefined,
       playersA: playersAData.map((p) => p.uid),
       playersB: playersBData.map((p) => p.uid),
     });
