@@ -152,6 +152,7 @@ export type MatchItem = {
   name: string;
   place: string;
   format: string;
+  description?: string;
   status: 'open'|'running'|'closed'|'finished'|string;
   playersA?: MatchPlayer[];
   playersB?: MatchPlayer[];
@@ -173,10 +174,17 @@ export function useOpenMatches() {
     const subscribe = (qArg: Query<DocumentData>): Unsubscribe => onSnapshot(
       qArg,
       (snap: QuerySnapshot<DocumentData>) => {
-        const items = snap.docs.map((docSnap: QueryDocumentSnapshot<DocumentData>) => ({
-          id: docSnap.id,
-          ...(docSnap.data() as Record<string, unknown>),
-        })) as MatchItem[];
+        const items = snap.docs.map((docSnap: QueryDocumentSnapshot<DocumentData>) => {
+          const data = docSnap.data() as Record<string, unknown>;
+          const description = String(
+            (data.description ?? data.comment ?? '') as string
+          ).trim();
+          return {
+            id: docSnap.id,
+            ...data,
+            description,
+          } as MatchItem;
+        });
         setData(items);
         setLoading(false);
       },

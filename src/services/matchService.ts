@@ -35,6 +35,7 @@ export type CreateMatchInput = {
   name?: string | null;
   place?: string | null;
   format?: string | null;
+  description?: string | null;
   visibility?: MatchVisibility;
 };
 
@@ -67,6 +68,7 @@ export async function createMatch(input: CreateMatchInput) {
     name: input.name ?? '',
     place: input.place ?? '',
     format: input.format ?? '',
+    description: input.description ?? '',
     scoreA: 0,
     scoreB: 0,
   };

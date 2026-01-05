@@ -23,6 +23,7 @@ export default function MatchDetailsScreen({ route, navigation }: P) {
   const statusLabel = String(match?.status ?? 'finished');
   const scoreA = typeof match?.scoreA === 'number' ? match?.scoreA : 0;
   const scoreB = typeof match?.scoreB === 'number' ? match?.scoreB : 0;
+  const description = String(match?.description ?? '').trim();
 
   const winnerTeam = useMemo(() => {
     const raw = String(match?.winnerTeam ?? '').toUpperCase();
@@ -50,6 +51,8 @@ export default function MatchDetailsScreen({ route, navigation }: P) {
     const pts = Number(stats.pts ?? stats.points ?? 0);
     const blocks = Number(stats.blocks ?? 0);
     const fouls = Number(stats.fouls ?? 0);
+    const eloAfter = typeof p.elo?.after === 'number' ? p.elo.after : null;
+    const eloDelta = typeof p.elo?.delta === 'number' ? p.elo.delta : null;
     const extras: string[] = [];
     if (typeof stats.twoPts === 'number') extras.push(`2PTS ${stats.twoPts}`);
     if (typeof stats.threePts === 'number') extras.push(`3PTS ${stats.threePts}`);
@@ -61,6 +64,11 @@ export default function MatchDetailsScreen({ route, navigation }: P) {
             {pts} pts · {blocks} blk · {fouls} fautes
           </Text>
           {extras.length > 0 ? <Text style={s.playerMeta}>{extras.join(' · ')}</Text> : null}
+          {eloAfter !== null && eloDelta !== null ? (
+            <Text style={s.playerMeta}>
+              Elo {eloAfter} ({eloDelta >= 0 ? '+' : ''}{eloDelta})
+            </Text>
+          ) : null}
         </View>
       </View>
     );
@@ -91,6 +99,7 @@ export default function MatchDetailsScreen({ route, navigation }: P) {
           <View style={s.card}>
             <Text style={s.matchName}>{match.name ?? 'Match'}</Text>
             <Text style={s.matchMeta}>{match.place ?? '-'}</Text>
+            {description ? <Text style={s.matchMeta}>{description}</Text> : null}
             <Text style={s.matchMeta}>{match.format ?? '-'}</Text>
             <Text style={s.matchMeta}>{formatDate(match.endedAt)}</Text>
 

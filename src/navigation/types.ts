@@ -60,6 +60,7 @@ export type MatchLite = {
   name: string;
   place: string;
   format: string;
+  description?: string;
   playersA?: MatchPlayer[];
   playersB?: MatchPlayer[];
   participantsCountA?: number;
@@ -72,6 +73,7 @@ export function sanitizeMatch(m: any): MatchLite {
     name: String(m.name ?? ''),
     place: String(m.place ?? ''),
     format: String(m.format ?? ''),
+    description: String(m.description ?? m.comment ?? ''),
     playersA: Array.isArray(m.playersA) ? (m.playersA as MatchPlayer[]) : [],
     playersB: Array.isArray(m.playersB) ? (m.playersB as MatchPlayer[]) : [],
     participantsCountA: typeof m.participantsCountA === 'number' ? m.participantsCountA : undefined,
@@ -92,6 +94,7 @@ export type MatchDoc = {
   participantsCountB?: number;
   referees: string[];
   status: MatchStatus;
+  description?: string | null;
   comment?: string | null;
   createdBy: string;
   createdAt: any; // Firestore Timestamp

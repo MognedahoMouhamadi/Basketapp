@@ -265,12 +265,24 @@ export async function commitElo(matchId: string) {
       const userRef = doc(db, 'users', uid);
       const next = Math.round(currentElosA[uid] + deltaA);
       tx.set(userRef, { elo: next }, { merge: true });
+      const partRef = doc(db, 'matches', matchId, 'participants', uid);
+      tx.set(
+        partRef,
+        { elo: { before: currentElosA[uid], delta: deltaA, after: next } },
+        { merge: true }
+      );
     }
 
     for (const uid of teamB) {
       const userRef = doc(db, 'users', uid);
       const next = Math.round(currentElosB[uid] + deltaB);
       tx.set(userRef, { elo: next }, { merge: true });
+      const partRef = doc(db, 'matches', matchId, 'participants', uid);
+      tx.set(
+        partRef,
+        { elo: { before: currentElosB[uid], delta: deltaB, after: next } },
+        { merge: true }
+      );
     }
 
     tx.update(matchRef, { eloCommitted: true, updatedAt: serverTimestamp() });

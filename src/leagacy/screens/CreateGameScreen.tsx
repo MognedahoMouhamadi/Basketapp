@@ -45,7 +45,7 @@ export default function CreateGameScreen({ navigation }: P) {
         status: 'open' as const,
         createdBy: u.uid,
         refereeId: asReferee ? u.uid : null,
-        comment: trimmedComment,
+        description: trimmedComment,
         scoreA: 0,
         scoreB: 0,
         playersA: [] as string[],

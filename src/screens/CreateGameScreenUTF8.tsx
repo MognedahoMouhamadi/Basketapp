@@ -49,6 +49,7 @@ export default function CreateGameScreenUTF8({ navigation }: P) {
         name: name?.trim() ?? null,
         place: place?.trim() ?? null,
         format: format ?? '3v3',
+        description: comment.trim(),
         visibility,
       });
 

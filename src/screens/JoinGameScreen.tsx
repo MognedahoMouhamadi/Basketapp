@@ -66,6 +66,11 @@ export default function JoinGameScreen({ navigation }: P) {
               <Text style={s.cardSub}>
                 {item.place} · {item.format}
               </Text>
+              {item.description ? (
+                <Text style={s.cardDesc} numberOfLines={2} ellipsizeMode="tail">
+                  {item.description}
+                </Text>
+              ) : null}
               <Text style={s.cardSub}>
                 A: {item.playersA?.length ?? 0} · B: {item.playersB?.length ?? 0}
               </Text>
@@ -102,6 +107,7 @@ const s = StyleSheet.create({
   },
   cardTitle: { color: colors.text, fontWeight: '700' },
   cardSub: { color: colors.textDim, marginTop: 2 },
+  cardDesc: { color: colors.textDim, marginTop: 6 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });
 

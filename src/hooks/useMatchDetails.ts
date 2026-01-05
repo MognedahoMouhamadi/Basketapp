@@ -7,6 +7,8 @@ export type MatchDetailsDoc = {
   name?: string;
   place?: string;
   format?: string;
+  description?: string;
+  comment?: string;
   category?: string;
   status?: string;
   scoreA?: number;
@@ -28,6 +30,11 @@ export type MatchParticipant = {
   team?: 'A' | 'B' | null;
   displayName?: string | null;
   stats?: ParticipantStats;
+  elo?: {
+    before?: number;
+    delta?: number;
+    after?: number;
+  };
 };
 
 export function useMatchDetails(matchId?: string | null) {
@@ -50,7 +57,9 @@ export function useMatchDetails(matchId?: string | null) {
       ref,
       (snap) => {
         if (snap.exists()) {
-          setMatch({ id: snap.id, ...(snap.data() as any) } as MatchDetailsDoc);
+          const data = snap.data() as any;
+          const description = String(data?.description ?? data?.comment ?? '').trim();
+          setMatch({ id: snap.id, ...data, description } as MatchDetailsDoc);
         } else {
           setMatch(null);
         }
