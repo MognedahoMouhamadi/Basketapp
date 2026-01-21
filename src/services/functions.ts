@@ -20,6 +20,8 @@ const cfPushEvent = httpsCallable<{
   points?: number;
 }, SimpleResponse>(functions, 'pushEvent');
 const cfEndMatch = httpsCallable<{ matchId: string }, SimpleResponse>(functions, 'endMatch');
+const cfUndoEvent = httpsCallable<{ matchId: string }, SimpleResponse>(functions, 'undoEvent');
+const cfRedoEvent = httpsCallable<{ matchId: string }, SimpleResponse>(functions, 'redoEvent');
 
 export async function joinTeamRemote(matchId: string, team: 'A' | 'B' | null) {
   return (await cfJoinTeam({ matchId, team })).data;
@@ -41,4 +43,12 @@ export async function pushEventRemote(params: {
 
 export async function endMatchRemote(matchId: string) {
   return (await cfEndMatch({ matchId })).data;
+}
+
+export async function undoEventRemote(matchId: string) {
+  return (await cfUndoEvent({ matchId })).data;
+}
+
+export async function redoEventRemote(matchId: string) {
+  return (await cfRedoEvent({ matchId })).data;
 }

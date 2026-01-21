@@ -10,7 +10,13 @@ import { useMatch } from '../hooks/useMatches';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useMatchParticipants } from '../hooks/useMatchParticipants';
-import { startMatchRemote, pushEventRemote, endMatchRemote } from '../services/functions';
+import {
+  startMatchRemote,
+  pushEventRemote,
+  endMatchRemote,
+  undoEventRemote,
+  redoEventRemote,
+} from '../services/functions';
 import { startMatchLocal, pushEventLocal, endMatch as endMatchLocal } from '../services/matchService';
 import { scoreDeltaFor, ScoreEventType } from '../services/matchScoring';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -82,6 +88,19 @@ export default function MatchSheetScreen({ route, navigation }: P) {
     () => playersBList.map((p, idx) => normalizePlayer(p, `B${idx + 1}`)),
     [playersBList]
   );
+  const participantStatsByUid = useMemo(() => {
+    const result: Record<string, { points: number; fouls: number; blocks: number }> = {};
+    const all = [...participantsA, ...participantsB] as any[];
+    for (const p of all) {
+      const stats = (p as any)?.stats ?? {};
+      result[String(p.uid)] = {
+        points: Math.max(0, Number(stats.pts ?? stats.points ?? 0)),
+        fouls: Math.max(0, Number(stats.fouls ?? 0)),
+        blocks: Math.max(0, Number(stats.blocks ?? 0)),
+      };
+    }
+    return result;
+  }, [participantsA, participantsB]);
 
   const playerIdsA = useMemo(() => playersAData.map((p) => p.uid), [playersAData]);
   const playerIdsB = useMemo(() => playersBData.map((p) => p.uid), [playersBData]);
@@ -153,12 +172,12 @@ export default function MatchSheetScreen({ route, navigation }: P) {
   const renderPlayer = (team:'A'|'B') => ({ item }: { item: NormalizedPlayer }) => (
     <PlayerRow
       name={nameOf(item)}
-      stats={matchState.stats[item.uid]}
+      stats={participantStatsByUid[item.uid]}
       disabled={!canReferee}
-      onPlus2={()=> { if(canReferee) { matchState.push({ ts:Date.now(), team, playerId:item.uid, type:'PLUS2' }); sendScoreEvent(team, item.uid, 'PLUS2'); }}}
-      onPlus3={()=> { if(canReferee) { matchState.push({ ts:Date.now(), team, playerId:item.uid, type:'PLUS3' }); sendScoreEvent(team, item.uid, 'PLUS3'); }}}
-      onFoul ={()=> { if(canReferee) { matchState.push({ ts:Date.now(), team, playerId:item.uid, type:'FOUL'  }); sendScoreEvent(team, item.uid, 'FOUL'); }}}
-      onBlock={()=> { if(canReferee) { matchState.push({ ts:Date.now(), team, playerId:item.uid, type:'BLOCK' }); sendScoreEvent(team, item.uid, 'BLOCK'); }}}
+      onPlus2={()=> { if(canReferee) { sendScoreEvent(team, item.uid, 'PLUS2'); }}}
+      onPlus3={()=> { if(canReferee) { sendScoreEvent(team, item.uid, 'PLUS3'); }}}
+      onFoul ={()=> { if(canReferee) { sendScoreEvent(team, item.uid, 'FOUL'); }}}
+      onBlock={()=> { if(canReferee) { sendScoreEvent(team, item.uid, 'BLOCK'); }}}
     />
   );
 
@@ -209,6 +228,23 @@ export default function MatchSheetScreen({ route, navigation }: P) {
 
   const scoreA = match?.scoreA ?? matchState.scoreA;
   const scoreB = match?.scoreB ?? matchState.scoreB;
+  const onUndo = async () => {
+    if (!matchId || !canReferee) return;
+    try {
+      await undoEventRemote(String(matchId));
+    } catch (err: any) {
+      Alert.alert('Erreur', err?.code ? `${err.code}` : (err?.message ?? 'Annulation impossible.'));
+    }
+  };
+
+  const onRedo = async () => {
+    if (!matchId || !canReferee) return;
+    try {
+      await redoEventRemote(String(matchId));
+    } catch (err: any) {
+      Alert.alert('Erreur', err?.code ? `${err.code}` : (err?.message ?? 'Rétablissement impossible.'));
+    }
+  };
 
   return (
     <SafeAreaView style={s.container} edges={['top','bottom']}>
@@ -281,10 +317,10 @@ export default function MatchSheetScreen({ route, navigation }: P) {
             },
           ]}
         >
-          <Pressable style={[s.btnFoot, s.btnOutline]} onPress={matchState.undo}>
+          <Pressable style={[s.btnFoot, s.btnOutline]} onPress={onUndo}>
             <Text style={s.btnOutlineTxt}>Annuler</Text>
           </Pressable>
-          <Pressable style={[s.btnFoot, s.btnOutline]} onPress={matchState.redo}>
+          <Pressable style={[s.btnFoot, s.btnOutline]} onPress={onRedo}>
             <Text style={s.btnOutlineTxt}>Refaire</Text>
           </Pressable>
         </View>
