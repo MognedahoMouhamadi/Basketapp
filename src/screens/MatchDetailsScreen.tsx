@@ -6,6 +6,7 @@ import colors from '../theme/colors';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import { useMatchDetails } from '../hooks/useMatchDetails';
+import { getDisplayName } from '../utils/displayName';
 
 type P = NativeStackScreenProps<AppStackParamList, 'MatchDetails'>;
 
@@ -45,12 +46,19 @@ export default function MatchDetailsScreen({ route, navigation }: P) {
         ? 'Egalite'
         : '-';
 
+  // Renders one participant row using the shared display-name resolver.
   const renderPlayerRow = (p: any) => {
-    const name = String(p.displayName ?? p.uid ?? 'Joueur');
+    const playerId = String(p.playerId ?? p.uid ?? '');
+    const name = getDisplayName(playerId, p.displayName, undefined);
     const stats = p.stats ?? {};
     const pts = Number(stats.pts ?? stats.points ?? 0);
     const blocks = Number(stats.blocks ?? 0);
     const fouls = Number(stats.fouls ?? 0);
+    // Delta is keyed by playerId and may be missing for older matches.
+    const eloDeltaByPlayerId = match?.eloDeltaByPlayerId as Record<string, number> | undefined;
+    const deltaRaw = playerId ? eloDeltaByPlayerId?.[playerId] : undefined;
+    const deltaText = typeof deltaRaw === 'number' ? (deltaRaw > 0 ? `+${deltaRaw}` : `${deltaRaw}`) : '\u2014';
+    // if (deltaText === '\u2014') console.log('Missing elo delta', matchId, playerId, Object.keys(eloDeltaByPlayerId || {}));
     const eloAfter = typeof p.elo?.after === 'number' ? p.elo.after : null;
     const eloDelta = typeof p.elo?.delta === 'number' ? p.elo.delta : null;
     const extras: string[] = [];
@@ -63,6 +71,7 @@ export default function MatchDetailsScreen({ route, navigation }: P) {
           <Text style={s.playerMeta}>
             {pts} pts · {blocks} blk · {fouls} fautes
           </Text>
+          <Text style={s.playerMeta}>{deltaText}</Text>
           {extras.length > 0 ? <Text style={s.playerMeta}>{extras.join(' · ')}</Text> : null}
           {eloAfter !== null && eloDelta !== null ? (
             <Text style={s.playerMeta}>
@@ -98,7 +107,7 @@ export default function MatchDetailsScreen({ route, navigation }: P) {
         <ScrollView contentContainerStyle={s.scroll}>
           <View style={s.card}>
             <Text style={s.matchName}>{match.name ?? 'Match'}</Text>
-            <Text style={s.matchMeta}>{match.place ?? '-'}</Text>
+            <Text style={s.matchMeta}>{[match.place, match.city].filter(Boolean).join(' - ') || '-'}</Text>
             {description ? <Text style={s.matchMeta}>{description}</Text> : null}
             <Text style={s.matchMeta}>{match.format ?? '-'}</Text>
             <Text style={s.matchMeta}>{formatDate(match.endedAt)}</Text>

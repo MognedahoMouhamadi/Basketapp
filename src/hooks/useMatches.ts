@@ -151,6 +151,7 @@ export type MatchItem = {
   id: string;
   name: string;
   place: string;
+  city?: string;
   format: string;
   description?: string;
   status: 'open'|'running'|'closed'|'finished'|string;

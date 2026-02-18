@@ -35,6 +35,13 @@ export function usePlayerStats(uid: string) {
         const statsColRef = collection(playerRef, 'stats');
 
         let stats: AnyRec | null = null;
+        let rankedElo: number | undefined;
+
+        const playerSnap = await getDoc(playerRef);
+        if (playerSnap.exists()) {
+          const data = playerSnap.data() as AnyRec;
+          if (typeof data?.rankedElo === 'number') rankedElo = data.rankedElo;
+        }
 
         const summarySnap = await getDoc(doc(statsColRef, 'summary'));
         if (summarySnap.exists()) {
@@ -53,7 +60,7 @@ export function usePlayerStats(uid: string) {
         eloSnap.forEach(d => eloHist.push(d.data() as EloPoint));
 
         if (!cancelled) {
-          setPlayer(stats ?? null);
+          setPlayer(stats ? { ...stats, rankedElo } : rankedElo !== undefined ? { rankedElo } : null);
           setHistory(eloHist);
           setLoading(false);
         }

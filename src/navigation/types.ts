@@ -59,6 +59,7 @@ export type MatchLite = {
   id: string;
   name: string;
   place: string;
+  city?: string;
   format: string;
   description?: string;
   playersA?: MatchPlayer[];
@@ -72,6 +73,7 @@ export function sanitizeMatch(m: any): MatchLite {
     id: String(m.id),
     name: String(m.name ?? ''),
     place: String(m.place ?? ''),
+    city: String(m.city ?? ''),
     format: String(m.format ?? ''),
     description: String(m.description ?? m.comment ?? ''),
     playersA: Array.isArray(m.playersA) ? (m.playersA as MatchPlayer[]) : [],
@@ -87,6 +89,7 @@ export type MatchStatus = 'open' | 'running' | 'closed' | 'finished';
 export type MatchDoc = {
   name: string;
   place: string;
+  city?: string;
   format: '1v1' | '2v2' | '3v3' | '4v4' | '5v5' | string;
   playersA?: MatchPlayer[];
   playersB?: MatchPlayer[];

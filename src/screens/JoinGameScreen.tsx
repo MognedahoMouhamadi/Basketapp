@@ -7,19 +7,21 @@ import { useOpenMatches } from '../hooks/useMatches';
 import { spacing, radius } from '../theme/tokens';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
+import { getDisplayName } from '../utils/displayName';
+
 
 type P = NativeStackScreenProps<AppStackParamList, 'JoinGame'>;
 
 export default function JoinGameScreen({ navigation }: P) {
   const [asReferee, setAsReferee] = useState(false);
   const { data: matches, loading } = useOpenMatches();
-
+  // Single resolver for any incoming player-like shape.
   const nameOf = (p: any) => {
   if (!p) return '—';
   if (typeof p === 'string') return p;
-  return p.displayName || p.uid || '—';
+  return getDisplayName(p.uid, p.displayName);
 };
-
+  // Keep navigation payload minimal and role-driven.
   const handleJoin = (item: any) => {
     const params = {
       matchId: item.id,
@@ -64,7 +66,7 @@ export default function JoinGameScreen({ navigation }: P) {
             <Pressable style={s.card} onPress={() => handleJoin(item)}>
               <Text style={s.cardTitle}>{item.name}</Text>
               <Text style={s.cardSub}>
-                {item.place} · {item.format}
+                {[item.place, item.city].filter(Boolean).join(' - ')} - {item.format}
               </Text>
               {item.description ? (
                 <Text style={s.cardDesc} numberOfLines={2} ellipsizeMode="tail">

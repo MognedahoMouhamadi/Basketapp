@@ -8,6 +8,7 @@ export type MatchHistoryItem = {
   id: string;
   name?: string;
   place?: string;
+  city?: string;
   format?: string;
   category?: string;
   winnerTeam?: string;
@@ -22,6 +23,7 @@ export type MatchHistoryItem = {
   playersA?: string[];
   playersB?: string[];
   participantUids?: string[];
+  eloDeltaByPlayerId?: Record<string, number>;
 };
 
 const sortByEnd = (a: MatchHistoryItem, b: MatchHistoryItem) => {

@@ -7,6 +7,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { saveMatchToFirestore } from '../hooks/useSaveMatch';
+import { getDisplayName } from '../utils/displayName';
 
 type P = NativeStackScreenProps<AppStackParamList,'MatchRecap'>;
 
@@ -32,7 +33,7 @@ export default function MatchRecapScreen({ route, navigation }: P) {
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         renderItem={({ item }) => (
           <View style={s.card}>
-            <Text style={s.title}>{item.id}</Text>
+            <Text style={s.title}>{getDisplayName(item.id)}</Text>
             <Text style={s.sub}>{item.points ?? 0} pts · {item.fouls ?? 0} fautes · {item.blocks ?? 0} blk</Text>
           </View>
         )}

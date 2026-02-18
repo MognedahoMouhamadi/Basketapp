@@ -8,6 +8,7 @@ import colors from '../theme/colors';
 import { useAuth } from '../hooks/useAuth';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { usePlayerStats } from '../hooks/usePlayerStats';
+import { getDisplayName } from '../utils/displayName';
 
 type EloPoint = { t?: string; ts?: number; elo: number };
 
@@ -18,8 +19,12 @@ export default function PlayerStatsScreen() {
 
   const { player: ps, history, loading } = usePlayerStats(authUser?.uid ?? '');
 
-  const name = profile?.displayName ?? authUser?.displayName ?? 
-  authUser?.email?.split('@')[0] ?? '—';
+  // Resolve user label from profile first, then safe id fallback.
+  const playerId = authUser?.uid ?? uid;
+  const name = getDisplayName(
+    playerId,
+    profile?.displayName ?? authUser?.displayName ?? authUser?.email?.split('@')[0]
+  );
 
   const initials = useMemo(() => name.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase(), [name]);
 
@@ -32,7 +37,7 @@ export default function PlayerStatsScreen() {
     winRate: typeof ps?.winRate === 'number' ? ps.winRate : 0,
     kda: typeof ps?.kda === 'number' ? ps.kda : 0,
     rankStr: ps?.rankStr ?? '#—',
-    elo: typeof ps?.elo === 'number' ? ps.elo : 0,
+    elo: typeof ps?.rankedElo === 'number' ? ps.rankedElo : 1000,
     eloDelta: typeof ps?.eloDelta === 'number' ? ps.eloDelta : 0,
     avgScore: typeof ps?.avgScore === 'number' ? ps.avgScore : 0,
     avgScoreDelta: typeof ps?.avgScoreDelta === 'number' ? ps.avgScoreDelta : 0,
@@ -43,6 +48,7 @@ export default function PlayerStatsScreen() {
     totalPoints: typeof ps?.totalPoints === 'number' ? ps.totalPoints : 0,
     totalPointsDelta: typeof ps?.totalPointsDelta === 'number' ? ps.totalPointsDelta : 0,
   };
+  // console.log('rankedElo', ps?.rankedElo, uid);
 
   return (
     <SafeAreaView style={s.container} edges={['top','bottom']}>
@@ -61,7 +67,7 @@ export default function PlayerStatsScreen() {
           <View style={{ flex: 1 }}>
             <Text style={s.name}>{player.name}</Text>
             <View style={s.tagsRow}>
-              <Tag>{`ELO ${player.elo}`}</Tag>
+              <Tag>{`ELO classé ${player.elo}`}</Tag>
               {player.team ? (<><Dot /><Text style={s.tagTxt}>{player.team}</Text></>) : null}
               {typeof player.age === 'number' ? (<><Dot /><Text style={s.tagTxt}>{player.age} ans</Text></>) : null}
               {player.position ? (<><Dot /><Text style={s.tagTxt}>{player.position}</Text></>) : null}
@@ -80,7 +86,7 @@ export default function PlayerStatsScreen() {
         <Text style={s.sectionTitle}>STATISTIQUES CLÉS</Text>
         <View style={s.grid}>
           <StatCard
-            title="ELO RATING"
+            title="ELO CLASSE"
             value={`${player.elo}`}
             delta={player.eloDelta}
             meterColor={colors.brand}

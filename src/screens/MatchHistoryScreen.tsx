@@ -7,6 +7,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useMatchHistory, useUserMatchHistory } from '../hooks/useMatchHistory';
+import { getDisplayName } from '../utils/displayName';
 
 type P = NativeStackScreenProps<AppStackParamList, 'MatchHistory'>;
 
@@ -18,9 +19,10 @@ export default function MatchHistoryScreen({ route, navigation }: P) {
   const data = mode === 'global' ? global.data : user.data;
   const loading = mode === 'global' ? global.loading : user.loading;
   const error = mode === 'global' ? global.error : user.error;
-
   const title = mode === 'global' ? 'Historique global' : 'Mes matchs';
+  const currentPlayerId = uid ?? undefined;
 
+  // Keep list stable and recompute only when datasource changes.
   const rows = useMemo(() => data, [data]);
 
   const formatDate = (val: any) => {
@@ -76,31 +78,41 @@ export default function MatchHistoryScreen({ route, navigation }: P) {
           data={rows}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16, gap: 12 }}
-          renderItem={({ item }) => (
-            <Pressable
-              style={s.card}
-              onPress={() => navigation.navigate('MatchDetails', { matchId: item.id })}
-            >
-              <View style={s.cardTop}>
-                <Text style={s.cardTitle}>{item.name ?? 'Match'}</Text>
-                <Text style={s.cardStatus}>{String(item.status ?? 'finished')}</Text>
-              </View>
-              <Text style={s.cardSub}>{item.place ?? '-'}</Text>
-              <View style={s.badgesRow}>
-                <View style={s.badge}><Text style={s.badgeTxt}>{categoryLabel(item.category)}</Text></View>
-                {winnerLabel(item.winnerTeam) ? (
-                  <View style={s.badge}><Text style={s.badgeTxt}>{winnerLabel(item.winnerTeam)}</Text></View>
-                ) : null}
-              </View>
-              {userResultLabel(item) ? <Text style={s.userResult}>{userResultLabel(item)}</Text> : null}
-              <View style={s.metaRow}>
-                <Text style={s.cardMeta}>
-                  {item.scoreA ?? 0} : {item.scoreB ?? 0}
-                </Text>
-                <Text style={s.cardMeta}>{formatDate(item.endedAt ?? item.updatedAt)}</Text>
-              </View>
-            </Pressable>
-          )}
+          renderItem={({ item }) => {
+            // Player delta and fallback title both rely on non-blocking data.
+            const delta = currentPlayerId ? item?.eloDeltaByPlayerId?.[currentPlayerId] : undefined;
+            const deltaText = typeof delta === 'number' ? (delta > 0 ? `+${delta}` : `${delta}`) : '—';
+            const fallbackName = item?.createdBy
+              ? getDisplayName(item.createdBy, undefined, undefined)
+              : 'Match';
+            // console.log(Object.keys(item?.eloDeltaByPlayerId ?? {}), currentPlayerId);
+            return (
+              <Pressable
+                style={s.card}
+                onPress={() => navigation.navigate('MatchDetails', { matchId: item.id })}
+              >
+                <View style={s.cardTop}>
+                  <Text style={s.cardTitle}>{item.name ?? fallbackName}</Text>
+                  <Text style={s.cardStatus}>{String(item.status ?? 'finished')}</Text>
+                </View>
+                <Text style={s.cardSub}>{[item.place, item.city].filter(Boolean).join(' - ') || '-'}</Text>
+                <View style={s.badgesRow}>
+                  <View style={s.badge}><Text style={s.badgeTxt}>{categoryLabel(item.category)}</Text></View>
+                  {winnerLabel(item.winnerTeam) ? (
+                    <View style={s.badge}><Text style={s.badgeTxt}>{winnerLabel(item.winnerTeam)}</Text></View>
+                  ) : null}
+                </View>
+                {userResultLabel(item) ? <Text style={s.userResult}>{userResultLabel(item)}</Text> : null}
+                <Text style={s.cardMeta}>{deltaText}</Text>
+                <View style={s.metaRow}>
+                  <Text style={s.cardMeta}>
+                    {item.scoreA ?? 0} : {item.scoreB ?? 0}
+                  </Text>
+                  <Text style={s.cardMeta}>{formatDate(item.endedAt ?? item.updatedAt)}</Text>
+                </View>
+              </Pressable>
+            );
+          }}
         />
       )}
     </SafeAreaView>

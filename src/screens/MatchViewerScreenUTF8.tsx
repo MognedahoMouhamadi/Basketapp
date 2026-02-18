@@ -9,11 +9,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { hasActiveMatch } from '../hooks/useActiveMatchGuard';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { db, auth } from '../services/firebase';
 import { joinTeamRemote } from '../services/functions';
 import { joinTeamLocal } from '../services/matchService';
 import { useMatchParticipants } from '../hooks/useMatchParticipants';
 import { isFinishedStatus } from '../services/matchStatus';
+import { getDisplayName } from '../utils/displayName';
 
 type P = NativeStackScreenProps<AppStackParamList, 'MatchViewer'>;
 
@@ -30,7 +31,7 @@ export default function MatchViewerScreen({ route, navigation }: P) {
   const nameOf = (p: any) => {
     if (!p) return '—';
     if (typeof p === 'string') return p;
-    return p.displayName || p.uid || '—';
+    return getDisplayName(p.uid, p.displayName);
   };
   useEffect(() => {
     if (!route.params?.matchId) return;
@@ -82,7 +83,7 @@ export default function MatchViewerScreen({ route, navigation }: P) {
       if (Platform.OS === 'web') {
         await joinTeamLocal(String(matchId), team, {
           uid,
-          displayName: profile?.displayName ?? uid,
+          displayName: profile?.displayName ?? auth.currentUser?.displayName ?? auth.currentUser?.email?.split('@')[0] ?? uid,
         });
         return;
       }
@@ -94,7 +95,7 @@ export default function MatchViewerScreen({ route, navigation }: P) {
         try {
           await joinTeamLocal(String(matchId), team, {
             uid,
-            displayName: profile?.displayName ?? uid,
+            displayName: profile?.displayName ?? auth.currentUser?.displayName ?? auth.currentUser?.email?.split('@')[0] ?? uid,
           });
           return;
         } catch (err: any) {

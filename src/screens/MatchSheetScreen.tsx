@@ -22,6 +22,7 @@ import { scoreDeltaFor, ScoreEventType } from '../services/matchScoring';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { finalizeMatchAndCommit } from '../services/statsElo.service';
+import { getDisplayName } from '../utils/displayName';
 
 type P = NativeStackScreenProps<AppStackParamList,'MatchSheet'>;
 
@@ -52,7 +53,9 @@ const normalizePlayer = (value: IncomingPlayer, fallback: string): NormalizedPla
   return { uid: safe, displayName: safe, joinedAt: Date.now() };
 };
 
-const isKnownFormat = (value: unknown): value is AppStackParamList['MatchRecap']['format'] => {
+type MatchRecapParams = NonNullable<AppStackParamList['MatchRecap']>;
+
+const isKnownFormat = (value: unknown): value is MatchRecapParams['format'] => {
   return (
     typeof value === 'string' &&
     ['1v1', '2v2', '3v3', '4v4', '5v5'].includes(value)
@@ -130,7 +133,7 @@ export default function MatchSheetScreen({ route, navigation }: P) {
   const nameOf = (p: any) => {
     if (!p) return '—';
     if (typeof p === 'string') return p;
-    return p.displayName || p.uid || '—';
+    return getDisplayName(p.uid, p.displayName);
   };
 
   const sendScoreEvent = async (team: 'A'|'B', playerId: string, type: ScoreEventType) => {

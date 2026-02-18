@@ -42,7 +42,26 @@ export function useUserProfile() {
     const unsub = onSnapshot(
       ref,
       (snap) => {
-        setProfile((snap.exists() ? (snap.data() as UserProfile) : null));
+        const fallbackDisplayName =
+          auth.currentUser?.displayName ?? auth.currentUser?.email?.split('@')[0];
+        if (!snap.exists()) {
+          setProfile(null);
+          setLoading(false);
+          return;
+        }
+        const data = snap.data() as UserProfile;
+        if (!data.displayName && fallbackDisplayName) {
+          // Persist a stable name once so all screens/hooks can reuse it.
+          setDoc(
+            ref,
+            { displayName: fallbackDisplayName, updatedAt: serverTimestamp() },
+            { merge: true }
+          ).catch(() => {});
+        }
+        setProfile({
+          ...data,
+          displayName: data.displayName ?? fallbackDisplayName,
+        });
         setLoading(false);
       },
       (e) => {

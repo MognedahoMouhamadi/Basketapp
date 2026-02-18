@@ -34,6 +34,7 @@ export type CreateMatchInput = {
   tournamentId?: string | null;
   name?: string | null;
   place?: string | null;
+  city?: string | null;
   format?: string | null;
   description?: string | null;
   visibility?: MatchVisibility;
@@ -67,6 +68,7 @@ export async function createMatch(input: CreateMatchInput) {
     allowJoinInRunning: input.category === 'public',
     name: input.name ?? '',
     place: input.place ?? '',
+    city: input.city ?? '',
     format: input.format ?? '',
     description: input.description ?? '',
     scoreA: 0,

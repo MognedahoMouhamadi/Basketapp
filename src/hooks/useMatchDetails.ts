@@ -6,6 +6,7 @@ export type MatchDetailsDoc = {
   id: string;
   name?: string;
   place?: string;
+  city?: string;
   format?: string;
   description?: string;
   comment?: string;
@@ -15,6 +16,7 @@ export type MatchDetailsDoc = {
   scoreB?: number;
   endedAt?: any;
   winnerTeam?: string;
+  eloDeltaByPlayerId?: Record<string, number>;
 };
 
 export type ParticipantStats = {

@@ -14,6 +14,7 @@ type P = NativeStackScreenProps<AppStackParamList, 'CreateGame'>;
 export default function CreateGameScreenUTF8({ navigation }: P) {
   const [name, setName] = useState('Pickup Game');
   const [place, setPlace] = useState('Terrain local');
+  const [city, setCity] = useState('');
   const [format, setFormat] = useState<'3v3' | '4v4' | '5v5'>('3v3');
   const [category, setCategory] = useState<MatchCategory>('public');
   const [tournamentId, setTournamentId] = useState<string>('');
@@ -22,7 +23,11 @@ export default function CreateGameScreenUTF8({ navigation }: P) {
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const canSubmit = name.trim().length > 1 && place.trim().length > 1 && !busy;
+  const canSubmit =
+    name.trim().length > 1 &&
+    place.trim().length > 1 &&
+    city.trim().length > 1 &&
+    !busy;
 
   const onContinue = async () => {
     if (!canSubmit) return;
@@ -48,6 +53,7 @@ export default function CreateGameScreenUTF8({ navigation }: P) {
         tournamentId: category === 'tournament' ? tournamentId.trim() : undefined,
         name: name?.trim() ?? null,
         place: place?.trim() ?? null,
+        city: city?.trim() ?? null,
         format: format ?? '3v3',
         description: comment.trim(),
         visibility,
@@ -86,6 +92,11 @@ export default function CreateGameScreenUTF8({ navigation }: P) {
       <Text style={s.label}>Lieu</Text>
       <TextInput style={s.input} value={place} onChangeText={setPlace}
         placeholder="Lieu" placeholderTextColor={colors.textDim}/>
+
+      <Text style={s.label}>Ville</Text>
+      <TextInput style={s.input} value={city} onChangeText={setCity}
+        placeholder="Ville" placeholderTextColor={colors.textDim}/>
+
 
       <Text style={s.label}>Format</Text>
       <View style={s.row}>

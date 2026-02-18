@@ -12,6 +12,7 @@ import { auth } from '../services/firebase';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useOpenMatches } from '../hooks/useMatches';
 import { useAuth } from '../hooks/useAuth';
+import { getDisplayName } from '../utils/displayName';
 
 type P = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
@@ -28,15 +29,10 @@ export default function HomeScreen({ navigation }: P) {
   const goJoin   = () => navigation.navigate('JoinGame');
   const goStats  = () => navigation.navigate('PlayerStats' as any); // si tu as l’écran
   const doLogout = () => signOut(auth);
-
-    const nameOf = (p: any) => {
-    if (!p) return '—';
-    if (typeof p === 'string') return p;
-    return p.displayName || p.uid || '—';
-  };
-
-  // Move logic out of JSX
-  const name = nameOf(profile) ?? nameOf(authUser) ?? 'Joueur';
+  const name = getDisplayName(
+    uid ?? authUser?.uid,
+    profile?.displayName ?? authUser?.displayName ?? authUser?.email?.split('@')[0]
+  );
 
   return (
     <SafeAreaView style={s.container} edges={['top','bottom']}>
@@ -103,7 +99,7 @@ export default function HomeScreen({ navigation }: P) {
               >
                 <View style={{ flex: 1 }}>
                   <Text style={s.matchName}>{item.name}</Text>
-                  <Text style={s.matchSub}>{item.place} · {item.format}</Text>
+                  <Text style={s.matchSub}>{[item.place, item.city].filter(Boolean).join(' - ')} - {item.format}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.textDim} />
               </Pressable>
