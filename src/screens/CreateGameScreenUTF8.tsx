@@ -81,7 +81,7 @@ const buildMatchSheetParams = (matchId: string, state: CreateGameFormState) => (
   playersB: [],
 });
 
-const useCreateGameController = (navigation: P['navigation']) => {
+function useCreateGameController(navigation: P['navigation']) {
   const [state, setState] = useState<CreateGameFormState>(getInitialFormState);
   const [busy, setBusy] = useState(false);
   const canSubmit = isFormSubmittable(state, busy);
@@ -117,7 +117,7 @@ const useCreateGameController = (navigation: P['navigation']) => {
     setState(prev => ({ ...prev, [key]: value }));
 
   return { state, busy, canSubmit, onContinue, updateState };
-};
+}
 
 type LabeledInputProps = {
   label: string;

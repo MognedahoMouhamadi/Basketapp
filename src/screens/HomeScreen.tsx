@@ -25,10 +25,10 @@ export default function HomeScreen({ navigation }: P) {
 
   const role = profile?.role ?? 'player';
 
-  const goCreate = () => navigation.navigate('CreateGame');
-  const goJoin   = () => navigation.navigate('JoinGame');
-  const goStats  = () => navigation.navigate('PlayerStats' as any); // si tu as l’écran
-  const doLogout = () => signOut(auth);
+  const handleCreatePress = () => navigation.navigate('CreateGame');
+  const handleJoinPress = () => navigation.navigate('JoinGame');
+  const handleStatsPress = () => navigation.navigate('PlayerStats' as any); // si tu as l’écran
+  const handleLogoutPress = () => signOut(auth);
   const name = getDisplayName(
     uid ?? authUser?.uid,
     profile?.displayName ?? authUser?.displayName ?? authUser?.email?.split('@')[0]
@@ -52,7 +52,7 @@ export default function HomeScreen({ navigation }: P) {
           <View style={[s.roleBadge, roleColors(role)]}>
             <Text style={s.roleTxt}>{role.toUpperCase()}</Text>
           </View>
-          <Pressable onPress={doLogout} hitSlop={8} style={s.logout}>
+          <Pressable onPress={handleLogoutPress} hitSlop={8} style={s.logout}>
             <Ionicons name="log-out-outline" size={20} color={colors.text} />
           </Pressable>
         </View>
@@ -63,13 +63,13 @@ export default function HomeScreen({ navigation }: P) {
         <ActionButton
           icon="add-circle-outline"
           label="Créer une partie"
-          onPress={goCreate}
+          onPress={handleCreatePress}
           primary
         />
         <ActionButton
           icon="enter-outline"
           label="Rejoindre une partie"
-          onPress={goJoin}
+          onPress={handleJoinPress}
           outline
         />
       </View>
@@ -94,7 +94,7 @@ export default function HomeScreen({ navigation }: P) {
             ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
             renderItem={({ item }) => (
               <Pressable
-                onPress={goJoin}
+                onPress={handleJoinPress}
                 style={s.matchItem}
               >
                 <View style={{ flex: 1 }}>
