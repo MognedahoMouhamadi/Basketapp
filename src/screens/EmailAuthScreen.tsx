@@ -61,6 +61,9 @@ export default function EmailAuthScreen({ route }: any) {
     if (tab === 'signup') return okMail && okPwd && pseudo.trim().length >= 2 && !loading;
     return okMail && okPwd && !loading;
   }, [email, pwd, pseudo, tab, loading]);
+  let submitLabel = 'Creer un compte';
+  if (loading) submitLabel = 'Connexion...';
+  else if (tab === 'login') submitLabel = 'Se connecter';
 
   return (
     <SafeAreaView style={s.container} edges={['top', 'bottom']}>
@@ -123,7 +126,7 @@ export default function EmailAuthScreen({ route }: any) {
             onPress={onSubmit}
             disabled={!canSubmit}
           >
-            <Text style={s.btnTxt}>{loading ? 'Connexion...' : tab === 'login' ? 'Se connecter' : 'Creer un compte'}</Text>
+            <Text style={s.btnTxt}>{submitLabel}</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

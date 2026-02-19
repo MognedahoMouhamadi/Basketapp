@@ -288,7 +288,7 @@ async function fetchParticipants(match: MatchDoc): Promise<ParticipantDoc[]> {
     const data = doc.data() as any;
     const uid = String(data?.uid ?? doc.id ?? '').trim();
     const teamRaw = String(data?.team ?? '').toUpperCase();
-    const team = teamRaw === 'A' ? 'A' : teamRaw === 'B' ? 'B' : null;
+    const team = normalizeParticipantTeam(teamRaw);
     if (!uid) return;
     participants.push({ uid, team });
   });
@@ -390,6 +390,12 @@ function normalizeWinnerTeam(value: unknown): WinnerTeam {
   if (raw === 'a') return 'A';
   if (raw === 'b') return 'B';
   if (raw === 'draw') return 'draw';
+  return null;
+}
+
+function normalizeParticipantTeam(teamRaw: string): 'A' | 'B' | null {
+  if (teamRaw === 'A') return 'A';
+  if (teamRaw === 'B') return 'B';
   return null;
 }
 

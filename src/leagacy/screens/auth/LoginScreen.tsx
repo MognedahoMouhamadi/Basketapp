@@ -47,6 +47,7 @@ export default function LoginScreen({ navigation }: any) {
       setError(e?.message ?? 'Impossible d’envoyer l’email.');
     }
   };
+  const errorColor = error.includes('envoyé') ? colors.textDim : colors.danger;
 
   return (
     <View style={{ flex:1, backgroundColor: colors.bg, padding: spacing.xxl }}>
@@ -80,7 +81,7 @@ export default function LoginScreen({ navigation }: any) {
           <Text style={{ color: colors.primary, marginTop: spacing.xs }}>Mot de passe oublié ?</Text>
         </Pressable>
 
-        {error ? <Text style={{ color: error.includes('envoyé') ? colors.textDim : colors.danger }}>{error}</Text> : null}
+        {error ? <Text style={{ color: errorColor }}>{error}</Text> : null}
 
         <PrimaryButton title={busy ? '...' : 'Se connecter'} onPress={onLogin} disabled={!canSubmit} />
       </View>

@@ -48,6 +48,12 @@ const computeWinner = (match: admin.firestore.DocumentData): WinnerTeam | null =
   return 'draw';
 };
 
+const getScoreAFromWinner = (winner: WinnerTeam): number => {
+  if (winner === 'A') return 1;
+  if (winner === 'B') return 0;
+  return 0.5;
+};
+
 const initAdmin = () => {
   if (admin.apps.length > 0) return;
   admin.initializeApp({
@@ -170,7 +176,7 @@ const main = async () => {
       teamA.reduce((sum, uid) => sum + ensureMap(eloByUid, uid), 0) / teamA.length;
     const avgB =
       teamB.reduce((sum, uid) => sum + ensureMap(eloByUid, uid), 0) / teamB.length;
-    const scoreA = winner === 'A' ? 1 : winner === 'B' ? 0 : 0.5;
+    const scoreA = getScoreAFromWinner(winner);
     const deltaA = computeDelta(avgA, avgB, scoreA, flags.kFactor);
     const deltaB = -deltaA;
 

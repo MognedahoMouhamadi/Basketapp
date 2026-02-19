@@ -60,7 +60,13 @@ export function usePlayerStats(uid: string) {
         eloSnap.forEach(d => eloHist.push(d.data() as EloPoint));
 
         if (!cancelled) {
-          setPlayer(stats ? { ...stats, rankedElo } : rankedElo !== undefined ? { rankedElo } : null);
+          let nextPlayer: AnyRec | null = null;
+          if (stats) {
+            nextPlayer = { ...stats, rankedElo };
+          } else if (rankedElo !== undefined) {
+            nextPlayer = { rankedElo };
+          }
+          setPlayer(nextPlayer);
           setHistory(eloHist);
           setLoading(false);
         }

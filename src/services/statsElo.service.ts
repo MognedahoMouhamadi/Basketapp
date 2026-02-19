@@ -50,6 +50,20 @@ const computeWinner = (scoreA?: unknown, scoreB?: unknown): WinnerTeam => {
   return 'draw';
 };
 
+const normalizeWinnerTeam = (value: unknown): WinnerTeam => {
+  const raw = String(value ?? '').toLowerCase();
+  if (raw === 'a') return 'A';
+  if (raw === 'b') return 'B';
+  if (raw === 'draw') return 'draw';
+  return null;
+};
+
+const getScoreAFromWinner = (winner: WinnerTeam): number => {
+  if (winner === 'A') return 1;
+  if (winner === 'B') return 0;
+  return 0.5;
+};
+
 const normalizeParticipantStats = (raw: any) => {
   const stats = raw?.stats ?? raw ?? {};
   const pointsRaw = toNumber(stats.pts ?? stats.points ?? 0);
@@ -247,12 +261,9 @@ export async function commitElo(matchId: string) {
     const data = snap.data() as any;
     if (data?.eloCommitted) return;
 
-    const rawWinner = String(data?.winnerTeam ?? '').toLowerCase();
-    const winnerTeam =
-      rawWinner === 'a' ? 'A' : rawWinner === 'b' ? 'B' : rawWinner === 'draw' ? 'draw' : null;
+    const winnerTeam = normalizeWinnerTeam(data?.winnerTeam);
     const resolvedWinner = winnerTeam ?? computeWinner(data?.scoreA, data?.scoreB);
-    const scoreA =
-      resolvedWinner === 'A' ? 1 : resolvedWinner === 'B' ? 0 : 0.5;
+    const scoreA = getScoreAFromWinner(resolvedWinner);
 
     const currentElosA: Record<string, number> = {};
     const currentElosB: Record<string, number> = {};
@@ -373,11 +384,9 @@ export async function recalcRankedEloFromScratch() {
   for (const uid of allUserIds) currentElos.set(uid, DEFAULT_ELO);
 
   for (const match of rankedMatches) {
-    const rawWinner = String(match.winnerTeam ?? '').toLowerCase();
-    const winnerTeam =
-      rawWinner === 'a' ? 'A' : rawWinner === 'b' ? 'B' : rawWinner === 'draw' ? 'draw' : null;
+    const winnerTeam = normalizeWinnerTeam(match.winnerTeam);
     const resolvedWinner = winnerTeam ?? computeWinner(match.scoreA, match.scoreB);
-    const scoreA = resolvedWinner === 'A' ? 1 : resolvedWinner === 'B' ? 0 : 0.5;
+    const scoreA = getScoreAFromWinner(resolvedWinner);
 
     const matchRef = doc(db, 'matches', match.id);
 

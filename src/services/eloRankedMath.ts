@@ -23,6 +23,12 @@ const computeWinner = (scoreA?: unknown, scoreB?: unknown): WinnerTeam => {
   return 'draw';
 };
 
+const getScoreAFromWinner = (winner: WinnerTeam): number => {
+  if (winner === 'A') return 1;
+  if (winner === 'B') return 0;
+  return 0.5;
+};
+
 export function computeRankedEloUpdate(params: ComputeParams): EloUpdateResult {
   const {
     teamAIds,
@@ -41,7 +47,7 @@ export function computeRankedEloUpdate(params: ComputeParams): EloUpdateResult {
   if (!teamAIds.length || !teamBIds.length) return { deltas, after };
 
   const resolvedWinner = winnerTeam ?? computeWinner(scoreA, scoreB);
-  const scoreAValue = resolvedWinner === 'A' ? 1 : resolvedWinner === 'B' ? 0 : 0.5;
+  const scoreAValue = getScoreAFromWinner(resolvedWinner);
 
   let sumA = 0;
   let sumB = 0;

@@ -37,14 +37,10 @@ export default function MatchDetailsScreen({ route, navigation }: P) {
     }
     return null;
   }, [match]);
-
-  const winnerLabel = winnerTeam === 'A'
-    ? 'Team A'
-    : winnerTeam === 'B'
-      ? 'Team B'
-      : winnerTeam === 'DRAW'
-        ? 'Egalite'
-        : '-';
+  let winnerLabel = '-';
+  if (winnerTeam === 'A') winnerLabel = 'Team A';
+  else if (winnerTeam === 'B') winnerLabel = 'Team B';
+  else if (winnerTeam === 'DRAW') winnerLabel = 'Egalite';
 
   // Renders one participant row using the shared display-name resolver.
   const renderPlayerRow = (p: any) => {
@@ -57,7 +53,10 @@ export default function MatchDetailsScreen({ route, navigation }: P) {
     // Delta is keyed by playerId and may be missing for older matches.
     const eloDeltaByPlayerId = match?.eloDeltaByPlayerId as Record<string, number> | undefined;
     const deltaRaw = playerId ? eloDeltaByPlayerId?.[playerId] : undefined;
-    const deltaText = typeof deltaRaw === 'number' ? (deltaRaw > 0 ? `+${deltaRaw}` : `${deltaRaw}`) : '\u2014';
+    let deltaText = '\u2014';
+    if (typeof deltaRaw === 'number') {
+      deltaText = deltaRaw > 0 ? `+${deltaRaw}` : `${deltaRaw}`;
+    }
     // if (deltaText === '\u2014') console.log('Missing elo delta', matchId, playerId, Object.keys(eloDeltaByPlayerId || {}));
     const eloAfter = typeof p.elo?.after === 'number' ? p.elo.after : null;
     const eloDelta = typeof p.elo?.delta === 'number' ? p.elo.delta : null;

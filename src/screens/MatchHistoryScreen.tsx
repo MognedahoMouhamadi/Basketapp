@@ -81,7 +81,10 @@ export default function MatchHistoryScreen({ route, navigation }: P) {
           renderItem={({ item }) => {
             // Player delta and fallback title both rely on non-blocking data.
             const delta = currentPlayerId ? item?.eloDeltaByPlayerId?.[currentPlayerId] : undefined;
-            const deltaText = typeof delta === 'number' ? (delta > 0 ? `+${delta}` : `${delta}`) : '—';
+            let deltaText = '—';
+            if (typeof delta === 'number') {
+              deltaText = delta > 0 ? `+${delta}` : `${delta}`;
+            }
             const fallbackName = item?.createdBy
               ? getDisplayName(item.createdBy, undefined, undefined)
               : 'Match';

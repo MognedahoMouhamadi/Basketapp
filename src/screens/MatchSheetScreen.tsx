@@ -53,6 +53,12 @@ const normalizePlayer = (value: IncomingPlayer, fallback: string): NormalizedPla
   return { uid: safe, displayName: safe, joinedAt: Date.now() };
 };
 
+const selectPlayersList = (participants: unknown[], incoming: unknown): IncomingPlayer[] => {
+  if (participants.length) return participants as IncomingPlayer[];
+  if (Array.isArray(incoming)) return incoming;
+  return [];
+};
+
 type MatchRecapParams = NonNullable<AppStackParamList['MatchRecap']>;
 
 const isKnownFormat = (value: unknown): value is MatchRecapParams['format'] => {
@@ -75,11 +81,11 @@ export default function MatchSheetScreen({ route, navigation }: P) {
   const [match, setMatch] = useState<any | null>(null);
   const { playersA: participantsA, playersB: participantsB } = useMatchParticipants(matchId);
   const playersAList = useMemo(
-    () => (participantsA.length ? participantsA : (Array.isArray(incomingA) ? incomingA : [])),
+    () => selectPlayersList(participantsA, incomingA),
     [participantsA, incomingA]
   ) as IncomingPlayer[];
   const playersBList = useMemo(
-    () => (participantsB.length ? participantsB : (Array.isArray(incomingB) ? incomingB : [])),
+    () => selectPlayersList(participantsB, incomingB),
     [participantsB, incomingB]
   ) as IncomingPlayer[];
 
