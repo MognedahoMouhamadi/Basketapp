@@ -1,6 +1,6 @@
 // src/components/ui/Input.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -19,36 +19,56 @@ export default function Input({
   secureTextEntry, keyboardType='default', autoCapitalize='none'
 }: Props) {
   const [hidden, setHidden] = useState(!!secureTextEntry);
+  const toggleIconName = hidden ? 'eye-outline' : 'eye-off-outline';
+  const showVisibilityToggle = !!secureTextEntry;
+
+  const renderVisibilityToggle = () => {
+    if (!showVisibilityToggle) return null;
+
+    return (
+      <Pressable onPress={() => setHidden(v => !v)} hitSlop={10}>
+        <Ionicons
+          name={toggleIconName}
+          size={20}
+          color={colors.textDim}
+        />
+      </Pressable>
+    );
+  };
 
   return (
-    <View style={{ gap: spacing.xs }}>
-      {label ? <Text style={{ color: colors.text, opacity:0.9 }}>{label}</Text> : null}
-      <View style={{
-        backgroundColor: colors.bg,
-        borderWidth: 1, borderColor: colors.border,
-        borderRadius: radius.xl, paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
-        flexDirection:'row', alignItems:'center', gap: spacing.sm
-      }}>
+    <View style={s.container}>
+      {label ? <Text style={s.label}>{label}</Text> : null}
+      <View style={s.inputWrapper}>
         <TextInput
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor={colors.textDim}
-          style={{ color: colors.text, flex: 1 }}
+          style={s.input}
           secureTextEntry={hidden}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
         />
-        {secureTextEntry ? (
-          <Pressable onPress={() => setHidden(v => !v)} hitSlop={10}>
-            <Ionicons
-              name={hidden ? 'eye-outline' : 'eye-off-outline'}
-              size={20}
-              color={colors.textDim}
-            />
-          </Pressable>
-        ) : null}
+        {renderVisibilityToggle()}
       </View>
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  container: { gap: spacing.xs },
+  label: { color: colors.text, opacity: 0.9 },
+  inputWrapper: {
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  input: { color: colors.text, flex: 1 },
+});
