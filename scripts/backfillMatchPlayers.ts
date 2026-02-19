@@ -11,9 +11,14 @@ type Player = { uid?: string; displayName?: string; joinedAt?: number } | string
 
 async function lookupDisplayName(uid: string): Promise<string | undefined> {
   try {
+    const fallbackDisplayName = undefined;
     const ref = doc(db, 'users', uid);
     const snap = await getDoc(ref);
-    return (snap.exists() ? (snap.data() as any)?.displayName : undefined) as string | undefined;
+
+    if (!snap.exists()) return fallbackDisplayName;
+
+    const data = snap.data() as any;
+    return data?.displayName ?? fallbackDisplayName;
   } catch {
     return undefined;
   }
@@ -85,4 +90,3 @@ backfill()
     console.error('Backfill failed', e);
     process.exit(1);
   });
-

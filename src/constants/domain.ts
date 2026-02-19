@@ -1,0 +1,2 @@
+export const CREATE_GAME_MIN_FIELD_LENGTH = 2;
+

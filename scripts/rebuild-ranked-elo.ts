@@ -521,7 +521,10 @@ async function main() {
   }
 }
 
-main();
+main().catch((err) => {
+  console.error('Unexpected failure while rebuilding ELO:', err);
+  process.exitCode = 1;
+});
 
 /**
  * ADAPTATION
